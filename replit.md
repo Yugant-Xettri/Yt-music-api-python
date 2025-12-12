@@ -1,52 +1,69 @@
-# Python Flask App - Vercel Ready
+# YT Music Stream - Vercel Ready
 
 ## Overview
-This project is set up for deployment to Vercel as a Python serverless application using Flask.
+A YouTube Music streaming web application built with Flask and yt-dlp. Designed for deployment on Vercel as serverless functions.
+
+## Features
+- Search YouTube Music tracks
+- Stream audio directly in browser
+- Queue/playlist functionality
+- Responsive modern UI
+- No cookies or proxy setup required
 
 ## Project Structure
 ```
 ├── api/
-│   └── index.py       # Main Flask app (Vercel entry point)
-├── main.py            # Local development entry point
-├── requirements.txt   # Python dependencies for Vercel
-├── pyproject.toml     # Python project configuration
-├── vercel.json        # Vercel deployment configuration
-└── .gitignore         # Git ignore file
-```
-
-## Local Development
-Run locally with:
-```bash
-python main.py
-```
-The server runs on `http://localhost:5000`
-
-## Vercel Deployment
-
-### Deploy via Vercel Dashboard
-1. Push code to GitHub/GitLab/Bitbucket
-2. Go to [vercel.com](https://vercel.com) → Add New → Project
-3. Import your repository
-4. Vercel auto-detects Python
-5. Click Deploy
-
-### Deploy via CLI
-```bash
-npm install -g vercel
-vercel login
-vercel           # Preview deployment
-vercel --prod    # Production deployment
+│   └── index.py           # Flask app with API endpoints
+├── templates/
+│   └── index.html         # Frontend HTML
+├── static/
+│   ├── style.css          # Styles
+│   └── app.js             # Frontend JavaScript
+├── main.py                # Local development entry
+├── requirements.txt       # Python dependencies
+├── vercel.json            # Vercel configuration
+└── pyproject.toml         # Python project config
 ```
 
 ## API Endpoints
-- `GET /` - Returns welcome message
-- `GET /api` - Returns API status
-- `GET /api/health` - Health check endpoint
+- `GET /` - Serves the web UI
+- `GET /api/search?q=<query>` - Search for tracks
+- `GET /api/stream/<video_id>` - Get stream URL for a track
+- `GET /api/health` - Health check
+
+## Local Development
+```bash
+python main.py
+```
+Runs on `http://localhost:5000`
+
+## Vercel Deployment
+
+### Via Dashboard
+1. Push code to GitHub
+2. Go to vercel.com → Add New → Project
+3. Import repository
+4. Deploy
+
+### Via CLI
+```bash
+npm install -g vercel
+vercel login
+vercel --prod
+```
 
 ## Dependencies
 - Flask 3.0.0
+- yt-dlp (latest)
+
+## How It Works
+1. User searches for music
+2. Backend uses yt-dlp to search YouTube
+3. User clicks a track
+4. Backend extracts direct audio stream URL
+5. Audio plays in browser's HTML5 player
 
 ## Notes
-- Files in `/api` folder are exposed as serverless functions
-- All routes are configured in `vercel.json` to route through `api/index.py`
-- If you encounter build errors, try switching Node.js to 18.x in Vercel project settings
+- yt-dlp extracts stream URLs without needing cookies
+- Vercel function timeout is set to 60 seconds
+- No proxy required - yt-dlp handles extraction natively
