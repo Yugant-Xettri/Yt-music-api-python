@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request
-import yt_dlp
+from pytubefix import YouTube, Search
 import re
 
 app = Flask(__name__)
@@ -25,28 +25,19 @@ def search():
         return jsonify({'error': 'Query required'}), 400
     
     query = sanitize_query(query)
-    search_url = f"ytsearch10:{query}"
-    
-    ydl_opts = {
-        'quiet': True,
-        'no_warnings': True,
-        'extract_flat': True,
-    }
     
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(search_url, download=False)
-            results = []
-            for entry in info.get('entries', []):
-                if entry:
-                    results.append({
-                        'id': entry.get('id'),
-                        'title': entry.get('title'),
-                        'duration': entry.get('duration'),
-                        'thumbnail': f"https://i.ytimg.com/vi/{entry.get('id')}/mqdefault.jpg",
-                        'channel': entry.get('channel') or entry.get('uploader', 'Unknown'),
-                    })
-            return jsonify({'results': results})
+        search_results = Search(query)
+        results = []
+        for video in search_results.videos[:10]:
+            results.append({
+                'id': video.video_id,
+                'title': video.title,
+                'duration': video.length,
+                'thumbnail': f"https://i.ytimg.com/vi/{video.video_id}/mqdefault.jpg",
+                'channel': video.author or 'Unknown',
+            })
+        return jsonify({'results': results})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -55,22 +46,23 @@ def stream(video_id):
     video_id = sanitize_query(video_id)
     url = f"https://www.youtube.com/watch?v={video_id}"
     
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'quiet': True,
-        'no_warnings': True,
-    }
-    
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
-            return jsonify({
-                'title': info.get('title'),
-                'url': info.get('url'),
-                'duration': info.get('duration'),
-                'thumbnail': info.get('thumbnail'),
-                'channel': info.get('channel') or info.get('uploader', 'Unknown'),
-            })
+        yt = YouTube(url)
+        audio_stream = yt.streams.filter(only_audio=True).order_by('abr').desc().first()
+        
+        if not audio_stream:
+            audio_stream = yt.streams.filter(progressive=True).order_by('abr').desc().first()
+        
+        if not audio_stream:
+            return jsonify({'error': 'No audio stream available'}), 404
+        
+        return jsonify({
+            'title': yt.title,
+            'url': audio_stream.url,
+            'duration': yt.length,
+            'thumbnail': yt.thumbnail_url,
+            'channel': yt.author or 'Unknown',
+        })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

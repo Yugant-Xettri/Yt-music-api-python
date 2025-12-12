@@ -1,7 +1,7 @@
 # YT Music Stream - Vercel Ready
 
 ## Overview
-A YouTube Music streaming web application built with Flask and yt-dlp. Designed for deployment on Vercel as serverless functions.
+A YouTube Music streaming web application built with Flask and pytubefix. Designed for deployment on Vercel as serverless functions.
 
 ## Features
 - Search YouTube Music tracks
@@ -54,16 +54,17 @@ vercel --prod
 
 ## Dependencies
 - Flask 3.0.0
-- yt-dlp (latest)
+- pytubefix (lightweight, Vercel-compatible)
 
 ## How It Works
 1. User searches for music
-2. Backend uses yt-dlp to search YouTube
+2. Backend uses pytubefix to search YouTube
 3. User clicks a track
 4. Backend extracts direct audio stream URL
 5. Audio plays in browser's HTML5 player
 
 ## Notes
-- yt-dlp extracts stream URLs without needing cookies
+- pytubefix is lightweight (~1MB) and fits within Vercel's 50MB function size limit
+- yt-dlp was too heavy for Vercel serverless functions
 - Vercel function timeout is set to 60 seconds
-- No proxy required - yt-dlp handles extraction natively
+- No proxy required - pytubefix handles extraction natively
