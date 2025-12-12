@@ -1,33 +1,26 @@
-# YT Music Stream - Vercel Ready
+# YT Music Stream API - Render Ready
 
 ## Overview
-A YouTube Music streaming web application built with Flask and pytubefix. Designed for deployment on Vercel as serverless functions.
+A YouTube Music streaming API built with Flask and yt-dlp. Designed for deployment on Render.
 
 ## Features
-- Search YouTube Music tracks
-- Stream audio directly in browser
-- Queue/playlist functionality
-- Responsive modern UI
-- No cookies or proxy setup required
+- Search YouTube tracks
+- Get direct audio stream URLs
+- Fast yt-dlp based extraction
+- Optimized for Render deployment with gunicorn
 
 ## Project Structure
 ```
-├── api/
-│   └── index.py           # Flask app with API endpoints
-├── templates/
-│   └── index.html         # Frontend HTML
-├── static/
-│   ├── style.css          # Styles
-│   └── app.js             # Frontend JavaScript
+├── index.py               # Flask app with API endpoints
 ├── main.py                # Local development entry
 ├── requirements.txt       # Python dependencies
-├── vercel.json            # Vercel configuration
+├── render.yaml            # Render configuration
 └── pyproject.toml         # Python project config
 ```
 
 ## API Endpoints
-- `GET /` - Serves the web UI
-- `GET /api/search?q=<query>` - Search for tracks
+- `GET /` - API info
+- `GET /api/search?q=<query>` - Search for tracks (returns up to 10 results)
 - `GET /api/stream/<video_id>` - Get stream URL for a track
 - `GET /api/health` - Health check
 
@@ -37,34 +30,31 @@ python main.py
 ```
 Runs on `http://localhost:5000`
 
-## Vercel Deployment
+## Render Deployment
 
 ### Via Dashboard
 1. Push code to GitHub
-2. Go to vercel.com → Add New → Project
-3. Import repository
-4. Deploy
+2. Go to render.com → New → Web Service
+3. Connect repository
+4. Runtime: Python 3
+5. Build Command: `pip install -r requirements.txt`
+6. Start Command: `gunicorn index:app --bind 0.0.0.0:$PORT --workers 4 --timeout 60`
+7. Deploy
 
-### Via CLI
-```bash
-npm install -g vercel
-vercel login
-vercel --prod
-```
+### Using render.yaml
+The render.yaml file is already configured for automatic deployment.
 
 ## Dependencies
-- Flask 3.0.0
-- pytubefix (lightweight, Vercel-compatible)
+- Flask - Web framework
+- gunicorn - Production WSGI server
+- yt-dlp - YouTube extraction
 
 ## How It Works
-1. User searches for music
-2. Backend uses pytubefix to search YouTube
-3. User clicks a track
-4. Backend extracts direct audio stream URL
-5. Audio plays in browser's HTML5 player
+1. Search endpoint uses yt-dlp to search YouTube
+2. Stream endpoint extracts direct audio URL using yt-dlp
+3. Returns URLs that can be played directly in audio players
 
-## Notes
-- pytubefix is lightweight (~1MB) and fits within Vercel's 50MB function size limit
-- yt-dlp was too heavy for Vercel serverless functions
-- Vercel function timeout is set to 60 seconds
-- No proxy required - pytubefix handles extraction natively
+## Recent Changes
+- 2025-12-12: Switched from pytubefix to yt-dlp for better bot detection handling
+- 2025-12-12: Updated for Render deployment (from Vercel)
+- 2025-12-12: Added gunicorn for production server
