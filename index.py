@@ -1,5 +1,4 @@
 from flask import Flask, jsonify, request
-from pytubefix import YouTube, Search
 import re
 
 app = Flask(__name__)
@@ -27,6 +26,7 @@ def search():
     query = sanitize_query(query)
     
     try:
+        from pytubefix import Search
         search_results = Search(query)
         results = []
         for video in search_results.videos[:10]:
@@ -47,7 +47,8 @@ def stream(video_id):
     url = f"https://www.youtube.com/watch?v={video_id}"
     
     try:
-        yt = YouTube(url)
+        from pytubefix import YouTube
+        yt = YouTube(url, use_po_token=True)
         audio_stream = yt.streams.filter(only_audio=True).order_by('abr').desc().first()
         
         if not audio_stream:
