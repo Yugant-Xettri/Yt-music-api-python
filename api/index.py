@@ -1,18 +1,22 @@
-from flask import Flask, jsonify, request, render_template, Response
+from flask import Flask, jsonify, request
 import yt_dlp
-import json
 import re
 
-import os
-base_dir = os.path.dirname(os.path.abspath(__file__))
-app = Flask(__name__, template_folder=os.path.join(base_dir, 'templates'), static_folder=os.path.join(base_dir, 'static'))
+app = Flask(__name__)
 
 def sanitize_query(query):
     return re.sub(r'[<>"\']', '', query.strip())
 
 @app.route('/')
 def home():
-    return render_template('index.html')
+    return jsonify({
+        'service': 'YT Music Stream API',
+        'endpoints': {
+            '/api/search?q=<query>': 'Search for tracks',
+            '/api/stream/<video_id>': 'Get stream URL',
+            '/api/health': 'Health check'
+        }
+    })
 
 @app.route('/api/search')
 def search():
@@ -27,7 +31,6 @@ def search():
         'quiet': True,
         'no_warnings': True,
         'extract_flat': True,
-        'default_search': 'ytsearch',
     }
     
     try:
@@ -61,11 +64,9 @@ def stream(video_id):
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
-            stream_url = info.get('url')
-            
             return jsonify({
                 'title': info.get('title'),
-                'url': stream_url,
+                'url': info.get('url'),
                 'duration': info.get('duration'),
                 'thumbnail': info.get('thumbnail'),
                 'channel': info.get('channel') or info.get('uploader', 'Unknown'),
@@ -76,6 +77,3 @@ def stream(video_id):
 @app.route('/api/health')
 def health():
     return jsonify({'status': 'healthy'})
-
-if __name__ == "__main__":
-    app.run(debug=True)
