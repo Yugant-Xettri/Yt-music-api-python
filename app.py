@@ -1,12 +1,23 @@
 from flask import Flask, jsonify, request
-import re
 import subprocess
 import json
+import os
+import tempfile
 
 app = Flask(__name__)
 
-def sanitize_query(query):
-    return re.sub(r'[<>"\']', '', query.strip())
+def get_cookie_file():
+    try:
+        import yt_cookies
+        cookies = yt_cookies.youtube()
+        if cookies:
+            fd, path = tempfile.mkstemp(suffix='.txt')
+            with os.fdopen(fd, 'w') as f:
+                f.write(cookies)
+            return path
+    except:
+        pass
+    return None
 
 def parse_duration(duration):
     if duration is None:
@@ -33,17 +44,20 @@ def search():
     if not query:
         return jsonify({'error': 'Query required'}), 400
     
-    query = sanitize_query(query)
-    
+    cookie_file = None
     try:
+        cookie_file = get_cookie_file()
         cmd = [
             'yt-dlp',
             '--flat-playlist',
             '--no-warnings',
             '--quiet',
             '-j',
-            f'ytsearch10:{query}'
         ]
+        if cookie_file:
+            cmd.extend(['--cookies', cookie_file])
+        cmd.append(f'ytsearch10:{query}')
+        
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
         
         results = []
@@ -67,13 +81,17 @@ def search():
         return jsonify({'error': 'Search timeout'}), 504
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    finally:
+        if cookie_file and os.path.exists(cookie_file):
+            os.unlink(cookie_file)
 
 @app.route('/api/stream/<video_id>')
 def stream(video_id):
-    video_id = sanitize_query(video_id)
     url = f"https://www.youtube.com/watch?v={video_id}"
+    cookie_file = None
     
     try:
+        cookie_file = get_cookie_file()
         cmd = [
             'yt-dlp',
             '--no-warnings',
@@ -84,8 +102,11 @@ def stream(video_id):
             '--print', '%(duration)s',
             '--print', '%(thumbnail)s',
             '--print', '%(channel)s',
-            url
         ]
+        if cookie_file:
+            cmd.extend(['--cookies', cookie_file])
+        cmd.append(url)
+        
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
         
         if result.returncode != 0:
@@ -106,13 +127,16 @@ def stream(video_id):
             'url': stream_url,
             'duration': duration,
             'thumbnail': thumbnail,
-            'channel': channel if channel != 'NA' else 'Unknown',
+            'channel': channel,
         })
             
     except subprocess.TimeoutExpired:
         return jsonify({'error': 'Stream timeout'}), 504
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    finally:
+        if cookie_file and os.path.exists(cookie_file):
+            os.unlink(cookie_file)
 
 @app.route('/api/health')
 def health():
